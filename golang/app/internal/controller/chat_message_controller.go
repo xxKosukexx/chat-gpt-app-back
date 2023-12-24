@@ -33,7 +33,7 @@ func (cmc *chatMessageController) Create(c echo.Context) error {
 	}
 	chatMessage.ChatRoomId = uint(val)
 
-	chatMessage.Answer = cmc.cmu.ChatGptRequest(chatMessage.Question)
+	chatMessage.Answer = cmc.cmu.RequestChatGPTAnswer(chatMessage.Question)
 
 	chatMessageRes, err := cmc.cmu.Create(chatMessage)
 	if err != nil {

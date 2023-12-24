@@ -14,7 +14,7 @@ import (
 
 type IChatMessageUsecase interface {
 	Create(chatMessage model.ChatMessage) (model.ChatMessageResponse, error)
-	ChatGptRequest(question string) string
+	RequestChatGPTAnswer(question string) string
 }
 
 type chatMessageUsecase struct {
@@ -52,7 +52,7 @@ type ChatGptRequestData struct {
 	Messages []Message `json:"messages"`
 }
 
-func (cru *chatMessageUsecase) ChatGptRequest(question string) string {
+func (cru *chatMessageUsecase) RequestChatGPTAnswer(question string) string {
 	url := "https://api.openai.com/v1/chat/completions"
 
 	data := ChatGptRequestData{
