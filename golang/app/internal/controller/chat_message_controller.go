@@ -4,7 +4,9 @@ import (
 	"app/internal/model"
 	"app/internal/usecase"
 	"github.com/labstack/echo/v4"
+	"log"
 	"net/http"
+	"strconv"
 )
 
 type IChatMessageController interface {
@@ -24,6 +26,12 @@ func (cmc *chatMessageController) Create(c echo.Context) error {
 	if err := c.Bind(&chatMessage); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
+
+	val, err := strconv.ParseUint(c.Param("chat_room_id"), 10, 32)
+	if err != nil {
+		log.Fatal(err)
+	}
+	chatMessage.ChatRoomId = uint(val)
 
 	chatMessage.Answer = cmc.cmu.ChatGptRequest(chatMessage.Question)
 
