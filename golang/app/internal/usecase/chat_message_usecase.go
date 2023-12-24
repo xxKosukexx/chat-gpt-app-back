@@ -1,0 +1,98 @@
+package usecase
+
+import (
+	"app/internal/model"
+	"app/internal/repository"
+	"app/internal/validator"
+	"bytes"
+	"encoding/json"
+	"io"
+	"log"
+	"net/http"
+	"os"
+)
+
+type IChatMessageUsecase interface {
+	Create(chatMessage model.ChatMessage) (model.ChatMessageResponse, error)
+	ChatGptRequest(question string) string
+}
+
+type chatMessageUsecase struct {
+	crr repository.IChatMessageRepository
+	crv validator.IChatMessageValidator
+}
+
+func NewChatMessageUsecase(crr repository.IChatMessageRepository, crv validator.IChatMessageValidator) IChatMessageUsecase {
+	return &chatMessageUsecase{crr, crv}
+}
+
+func (cru *chatMessageUsecase) Create(chatMessage model.ChatMessage) (model.ChatMessageResponse, error) {
+	if err := cru.crv.ChatMessageValidate(chatMessage); err != nil {
+		return model.ChatMessageResponse{}, err
+	}
+	newChatMessage := model.ChatMessage{Question: chatMessage.Question, Answer: chatMessage.Answer, ChatRoomId: chatMessage.ChatRoomId}
+	if err := cru.crr.CreateChatMessage(&newChatMessage); err != nil {
+		return model.ChatMessageResponse{}, err
+	}
+	resChatMessage := model.ChatMessageResponse{
+		ID:       newChatMessage.ID,
+		Question: newChatMessage.Question,
+		Answer:   newChatMessage.Answer,
+	}
+	return resChatMessage, nil
+}
+
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type ChatGptRequestData struct {
+	Model    string    `json:"model"`
+	Messages []Message `json:"messages"`
+}
+
+func (cru *chatMessageUsecase) ChatGptRequest(question string) string {
+	url := "https://api.openai.com/v1/chat/completions"
+
+	data := ChatGptRequestData{
+		Model: "gpt-3.5-turbo",
+		Messages: []Message{
+			{Role: "user", Content: question},
+		},
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// HTTPリクエストを作成
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("CHAT_GPT_API_KEY"))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var result map[string]interface{}
+
+	err = json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return result["choices"].([]interface{})[0].(map[string]interface{})["message"].(map[string]interface{})["content"].(string)
+}
