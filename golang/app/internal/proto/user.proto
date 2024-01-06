@@ -1,0 +1,15 @@
+syntax = 'proto3';
+
+package user;
+
+option go_package = "./pb";
+
+message GetUserEmailsRequest {}
+
+message GetUserEmailsResponse {
+  repeated string emails = 1;
+}
+
+service UserService {
+  rpc GetUserEmails(GetUserEmailsRequest) returns (GetUserEmailsResponse);
+}
