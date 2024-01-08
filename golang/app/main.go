@@ -17,6 +17,7 @@ import (
 
 type server struct {
 	pb.UnimplementedUserServiceServer
+	userUsecase usecase.IUserUsecase
 }
 
 func main() {
@@ -38,26 +39,31 @@ func main() {
 
 	e := router.NewRouter(userController, chatRoomController, chatMessageController)
 
-	go startGrpcServer()
+	server := &server{userUsecase: userUsecase}
+
+	go startGrpcServer(server)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
 
-func startGrpcServer() {
+func startGrpcServer(server *server) {
 	lis, err := net.Listen("tcp", ":50051") // gRPCポート
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterUserServiceServer(grpcServer, &server{})
+	pb.RegisterUserServiceServer(grpcServer, server)
 	fmt.Println("gRPC Server is running!")
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
 
-func (*server) GetUserEmails(ctx context.Context, in *pb.GetUserEmailsRequest) (*pb.GetUserEmailsResponse, error) {
-	// TODO: DBからユーザーのメールアドレスを取得する
+func (s *server) GetUserEmails(ctx context.Context, in *pb.GetUserEmailsRequest) (*pb.GetUserEmailsResponse, error) {
 	fmt.Println("GetUserEmails is invoked!")
-	return &pb.GetUserEmailsResponse{Emails: []string{"test@gmail.com", "test2@gmail.com"}}, nil
+	emails, err := s.userUsecase.GetUserEmails()
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetUserEmailsResponse{Emails: emails}, nil
 }

@@ -9,6 +9,7 @@ import (
 type IUserRepository interface {
 	GetUserByEmail(user *model.User, email string) error
 	CreateUser(user *model.User) error
+	GetAllUser() ([]model.User, error)
 }
 
 type userRepository struct {
@@ -31,4 +32,12 @@ func (ur *userRepository) CreateUser(user *model.User) error {
 		return err
 	}
 	return nil
+}
+
+func (ur *userRepository) GetAllUser() ([]model.User, error) {
+	var users []model.User
+	if result := ur.db.Find(&users); result.Error != nil {
+		return nil, result.Error
+	}
+	return users, nil
 }

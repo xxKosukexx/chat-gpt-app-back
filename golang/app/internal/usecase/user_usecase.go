@@ -14,6 +14,7 @@ import (
 type IUserUsecase interface {
 	SignUp(user model.User) (model.UserResponse, error)
 	Login(user model.User) (string, error)
+	GetUserEmails() ([]string, error)
 }
 
 type userUsecase struct {
@@ -65,4 +66,16 @@ func (uu *userUsecase) Login(user model.User) (string, error) {
 		return "", err
 	}
 	return tokenString, nil
+}
+
+func (uu *userUsecase) GetUserEmails() ([]string, error) {
+	users, err := uu.ur.GetAllUser()
+	if err != nil {
+		return nil, err
+	}
+	var emails []string
+	for _, user := range users {
+		emails = append(emails, user.Email)
+	}
+	return emails, nil
 }
