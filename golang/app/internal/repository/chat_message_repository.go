@@ -8,6 +8,7 @@ import (
 
 type IChatMessageRepository interface {
 	CreateChatMessage(chatMessage *model.ChatMessage) error
+	GetAllChatMessageByChatRoomId(chatRoomId uint) ([]model.ChatMessage, error)
 }
 
 type chatMessageRepository struct {
@@ -23,4 +24,12 @@ func (crr *chatMessageRepository) CreateChatMessage(chatMessage *model.ChatMessa
 		return err
 	}
 	return nil
+}
+
+func (crr *chatMessageRepository) GetAllChatMessageByChatRoomId(chatRoomId uint) ([]model.ChatMessage, error) {
+	var chatMessages []model.ChatMessage
+	if result := crr.db.Where("chat_room_id=?", chatRoomId).Find(&chatMessages); result.Error != nil {
+		return nil, result.Error
+	}
+	return chatMessages, nil
 }

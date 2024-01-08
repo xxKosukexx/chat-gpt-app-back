@@ -6,6 +6,7 @@ import (
 	"app/internal/validator"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 type IChatMessageUsecase interface {
 	Create(chatMessage model.ChatMessage) (model.ChatMessageResponse, error)
-	RequestChatGPTAnswer(question string) string
+	RequestChatGPTAnswer(chatRoomId uint, question string) (string, error)
 }
 
 type chatMessageUsecase struct {
@@ -52,14 +53,27 @@ type ChatGptRequestData struct {
 	Messages []Message `json:"messages"`
 }
 
-func (cru *chatMessageUsecase) RequestChatGPTAnswer(question string) string {
+func (cru *chatMessageUsecase) RequestChatGPTAnswer(chatRoomId uint, question string) (string, error) {
 	url := "https://api.openai.com/v1/chat/completions"
 
+	chatMessages, err := cru.crr.GetAllChatMessageByChatRoomId(chatRoomId)
+	if err != nil {
+		return "", err
+	}
+	var messages []Message
+	if len(chatMessages) > 0 {
+		for _, chatMessage := range chatMessages {
+			messages = append(messages, Message{Role: "user", Content: chatMessage.Question})
+			messages = append(messages, Message{Role: "system", Content: chatMessage.Answer})
+		}
+		messages = append(messages, Message{Role: "user", Content: question})
+	} else {
+		messages = append(messages, Message{Role: "user", Content: question})
+	}
+	fmt.Println(messages)
 	data := ChatGptRequestData{
-		Model: "gpt-3.5-turbo",
-		Messages: []Message{
-			{Role: "user", Content: question},
-		},
+		Model:    "gpt-3.5-turbo",
+		Messages: messages,
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -94,5 +108,5 @@ func (cru *chatMessageUsecase) RequestChatGPTAnswer(question string) string {
 		log.Fatal(err)
 	}
 
-	return result["choices"].([]interface{})[0].(map[string]interface{})["message"].(map[string]interface{})["content"].(string)
+	return result["choices"].([]interface{})[0].(map[string]interface{})["message"].(map[string]interface{})["content"].(string), nil
 }
