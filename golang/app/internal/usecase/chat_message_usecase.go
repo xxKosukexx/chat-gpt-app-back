@@ -6,7 +6,6 @@ import (
 	"app/internal/validator"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -61,16 +60,12 @@ func (cru *chatMessageUsecase) RequestChatGPTAnswer(chatRoomId uint, question st
 		return "", err
 	}
 	var messages []Message
-	if len(chatMessages) > 0 {
-		for _, chatMessage := range chatMessages {
-			messages = append(messages, Message{Role: "user", Content: chatMessage.Question})
-			messages = append(messages, Message{Role: "system", Content: chatMessage.Answer})
-		}
-		messages = append(messages, Message{Role: "user", Content: question})
-	} else {
-		messages = append(messages, Message{Role: "user", Content: question})
+	for _, chatMessage := range chatMessages {
+		messages = append(messages, Message{Role: "user", Content: chatMessage.Question})
+		messages = append(messages, Message{Role: "system", Content: chatMessage.Answer})
 	}
-	fmt.Println(messages)
+	messages = append(messages, Message{Role: "user", Content: question})
+
 	data := ChatGptRequestData{
 		Model:    "gpt-3.5-turbo",
 		Messages: messages,
