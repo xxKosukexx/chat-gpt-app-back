@@ -88,19 +88,19 @@ func (cru *chatMessageUsecase) RequestChatGPTAnswer(chatRoomId uint, question st
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	var result map[string]interface{}
 
 	err = json.Unmarshal([]byte(body), &result)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	return result["choices"].([]interface{})[0].(map[string]interface{})["message"].(map[string]interface{})["content"].(string), nil
