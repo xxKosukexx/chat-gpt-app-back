@@ -8,6 +8,7 @@ import (
 
 type IChatRoomRepository interface {
 	CreateChatRoom(chatRoom *model.ChatRoom) error
+	UpdateChatRoom(chatRoom *model.ChatRoom) error
 }
 
 type chatRoomRepository struct {
@@ -20,6 +21,13 @@ func NewChatRoomRepository(db *gorm.DB) IChatRoomRepository {
 
 func (crr *chatRoomRepository) CreateChatRoom(chatRoom *model.ChatRoom) error {
 	if err := crr.db.Create(&chatRoom).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (crr *chatRoomRepository) UpdateChatRoom(chatRoom *model.ChatRoom) error {
+	if err := crr.db.Save(&chatRoom).Error; err != nil {
 		return err
 	}
 	return nil

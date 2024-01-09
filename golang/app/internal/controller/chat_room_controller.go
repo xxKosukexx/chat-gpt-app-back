@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type IChatRoomController interface {
@@ -34,7 +35,6 @@ func (crc *chatRoomController) Create(c echo.Context) error {
 	}
 
 	chatRoom.UserId = uint(userId.(float64))
-	log.Print(chatRoom.UserId)
 	chatRoomRes, err := crc.cru.Create(chatRoom)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -43,7 +43,26 @@ func (crc *chatRoomController) Create(c echo.Context) error {
 }
 
 func (crc *chatRoomController) Update(c echo.Context) error {
-	return nil
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["user_id"]
+
+	chatRoom := model.ChatRoom{}
+	if err := c.Bind(&chatRoom); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	val, err := strconv.ParseUint(c.Param("chat_room_id"), 10, 32)
+	if err != nil {
+		log.Fatal(err)
+	}
+	chatRoom.ID = uint(val)
+	chatRoom.UserId = uint(userId.(float64))
+	chatRoomRes, err := crc.cru.Create(chatRoom)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusCreated, chatRoomRes)
 }
 
 func (crc *chatRoomController) Delete(c echo.Context) error {

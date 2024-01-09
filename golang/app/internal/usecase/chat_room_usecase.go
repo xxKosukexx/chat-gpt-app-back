@@ -8,6 +8,7 @@ import (
 
 type IChatRoomUsecase interface {
 	Create(chatRoom model.ChatRoom) (model.ChatRoomResponse, error)
+	Update(chatRoom model.ChatRoom) (model.ChatRoomResponse, error)
 }
 
 type chatRoomUsecase struct {
@@ -30,6 +31,21 @@ func (cru *chatRoomUsecase) Create(chatRoom model.ChatRoom) (model.ChatRoomRespo
 	resChatRoom := model.ChatRoomResponse{
 		ID:    newChatRoom.ID,
 		Title: newChatRoom.Title,
+	}
+	return resChatRoom, nil
+}
+
+func (cru *chatRoomUsecase) Update(chatRoom model.ChatRoom) (model.ChatRoomResponse, error) {
+	if err := cru.crv.ChatRoomValidate(chatRoom); err != nil {
+		return model.ChatRoomResponse{}, err
+	}
+	updateChatRoom := model.ChatRoom{ID: chatRoom.ID, Title: chatRoom.Title, UserId: chatRoom.UserId}
+	if err := cru.crr.UpdateChatRoom(&updateChatRoom); err != nil {
+		return model.ChatRoomResponse{}, err
+	}
+	resChatRoom := model.ChatRoomResponse{
+		ID:    updateChatRoom.ID,
+		Title: updateChatRoom.Title,
 	}
 	return resChatRoom, nil
 }

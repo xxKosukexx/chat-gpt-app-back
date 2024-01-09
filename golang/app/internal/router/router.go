@@ -38,6 +38,7 @@ func NewRouter(uc controller.IUserController, crc controller.IChatRoomController
 		TokenLookup: "cookie:token",
 	}))
 	cr.POST("", crc.Create)
+	cr.PUT("/:chat_room_id", crc.Update)
 
 	cm := e.Group("/chat_rooms/:chat_room_id/chat_messages")
 	cm.Use(echojwt.WithConfig(echojwt.Config{
